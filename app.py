@@ -24,41 +24,30 @@ Session = sessionmaker(bind=engine)
 
 app = Flask(__name__,static_folder='frontend/build/static')
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        # Si le formulaire de recherche est soumis
-        pokemon_name = request.form['pokemon_name']
-        selected_image_link = request.form.get('selectedImageLink', '')  # Ajoutez cette ligne
-        print(f"Pokemon Name: {pokemon_name}")
-        print(f"Selected Image Link: {selected_image_link}")
+@app.route('/api/getSalesData', methods=['GET'])
+def get_sales_data():
+    # Récupérez le nom du Pokémon à partir des paramètres de requête
+    pokemon_name = request.args.get('pokemon_name')
 
-        # Requête pour obtenir les informations sur les ventes du Pokémon spécifié
-        session = Session()
-        pokemon_sales = session.query(EbaySalesData).options(joinedload('pokemon_set')).filter(EbaySalesData.card_name == pokemon_name).all()
-        session.close()
+    # Effectuez les opérations nécessaires pour obtenir les données de ventes
+    session = Session()
+    pokemon_sales = session.query(EbaySalesData).options(joinedload('pokemon_set')).filter(EbaySalesData.card_name == pokemon_name).all()
+    session.close()
 
-        # Calcul des KPIs
-        num_sales = len(pokemon_sales)
-        avg_price = round(sum(sale.card_price_EUR for sale in pokemon_sales) / num_sales, 2) if num_sales > 0 else 0
-        max_price = max(sale.card_price_EUR for sale in pokemon_sales) if num_sales > 0 else 0
-        min_price = min(sale.card_price_EUR for sale in pokemon_sales) if num_sales > 0 else 0
+    # Calcul des KPIs
+    num_sales = len(pokemon_sales)
+    avg_price = round(sum(sale.card_price_EUR for sale in pokemon_sales) / num_sales, 2) if num_sales > 0 else 0
+    max_price = max(sale.card_price_EUR for sale in pokemon_sales) if num_sales > 0 else 0
+    min_price = min(sale.card_price_EUR for sale in pokemon_sales) if num_sales > 0 else 0
 
-        kpis = {'num_sales': num_sales, 'avg_price': avg_price, 'max_price': max_price, 'min_price': min_price}
+    kpis = {'num_sales': num_sales, 'avg_price': avg_price, 'max_price': max_price, 'min_price': min_price}
 
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({
-                'pokemon_name': pokemon_name,
-                'sales': [{'card_name': sale.card_name, 'card_price_EUR': sale.card_price_EUR, 'sold_date': sale.sold_date, 'seller_ID': sale.seller_ID, 'pokemon_set': {'set_name': sale.pokemon_set.set_name}} for sale in pokemon_sales],
-                'kpis': kpis,
-                'selectedImageLink': request.form.get('selectedImageLink', '')  # Ajoutez le lien de l'image sélectionnée à la réponse JSON
-            })
-
-        return render_template('results.html', pokemon_name=pokemon_name, pokemon_sales=pokemon_sales, kpis=kpis, selectedImageLink=request.form.get('selectedImageLink', ''))
-    
-    else:
-        # Si c'est une requête GET, simplement afficher la page d'accueil
-        return render_template('index.html')
+    # Retournez les données au format JSON
+    return jsonify({
+        'pokemon_name': pokemon_name,
+        'sales': [{'card_name': sale.card_name, 'card_price_EUR': sale.card_price_EUR, 'sold_date': sale.sold_date, 'seller_ID': sale.seller_ID, 'pokemon_set': {'set_name': sale.pokemon_set.set_name}} for sale in pokemon_sales],
+        'kpis': kpis,
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
