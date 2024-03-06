@@ -1,0 +1,41 @@
+<!-- results.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultats de la recherche</title>
+</head>
+<body>
+    <h1>Résultats de la recherche pour "{{ pokemon_name }}"</h1>
+
+    {% if pokemon_sales %}
+        <!-- Afficher les informations de vente -->
+        <div>
+            <!-- Afficher les informations de vente ici -->
+            <h2>Informations de vente</h2>
+            <ul>
+                {% for sale in pokemon_sales %}
+                    <li>
+                        <strong>Nom de la carte :</strong> {{ sale.card_name }} <br>
+                        <strong>Prix de vente :</strong> {{ sale.card_price_EUR }} <br>
+                        <strong>Date de vente :</strong> {{ sale.sold_date }} <br>
+                        <strong>ID du vendeur :</strong> {{ sale.seller_ID }} <br>
+                        <strong>Set Pokémon :</strong> {{ sale.pokemon_set.set_name }} <br>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <!-- Afficher les KPIs -->
+            <h2>KPIs</h2>
+            <p>Nombre de ventes : {{ kpis.num_sales }}</p>
+            <p>Prix moyen : {{ kpis.avg_price }}</p>
+            <p>Prix maximum : {{ kpis.max_price }}</p>
+            <p>Prix minimum : {{ kpis.min_price }}</p>
+        </div>
+    {% else %}
+        <!-- Aucun résultat de recherche trouvé -->
+        <p>Aucun résultat trouvé pour "{{ pokemon_name }}"</p>
+    {% endif %}
+</body>
+</html>

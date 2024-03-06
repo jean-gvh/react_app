@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma Application Flask avec React</title>
+
+    <!-- Inclure les fichiers de style générés par React -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.de3584d1.css') }}">
+
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Barre de recherche -->
+    <form method="post" action="{{ url_for('index') }}">
+        <label for="pokemon_name">Rechercher un Pokémon :</label>
+        <input type="text" name="pokemon_name" id="pokemon_name" required>
+        <button type="submit">Rechercher</button>
+    </form>
+
+    <!-- Inclure le script React généré -->
+    <script src="{{ url_for('static', filename='js/main.58193f9f.js') }}"></script>
+</body>
+</html>
