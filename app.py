@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, joinedload
 from models import PokemonSet, EbaySalesData
 from collections import defaultdict
-
+from functions import get_results, extract_info
 
 # Configuration de l'application Flask
 app = Flask(__name__, '/static')
@@ -13,7 +13,7 @@ DB_USER = 'root'
 DB_PASSWORD = 'Tictact0c'
 DB_HOST = 'localhost'
 DB_PORT = '3306'
-DB_NAME = 'test'
+DB_NAME = 'test2'
 
 # Créez une connexion à la base de données MySQL
 engine = create_engine(f'mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
@@ -61,6 +61,21 @@ def get_sales_data():
         'kpis': kpis,
         'chartData': averaged_data  # Ajoutez les données prétraitées ici
     })
+
+
+@app.route('/search', methods=['GET'])
+def search_ebay():
+    payload = {
+        'keywords': request.args.get('pokemon_name'),
+        'paginationInput': {'entriesPerPage': 10}
+    }
+    results = get_results(payload)
+    extracted_info = extract_info(results)
+    print('Results from eBay:', extract_info)
+    return extracted_info
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

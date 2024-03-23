@@ -3,6 +3,9 @@ from google.cloud import storage
 import csv
 import json
 
+from ebaysdk.finding import Connection as Finding
+from ebaysdk.exception import ConnectionError
+from flask import jsonify
 
 def get_pokemon_names():
 
@@ -64,4 +67,48 @@ def get_pokemon_suggestions(term):
                 'bloc_name': row['bloc_name']
             })
     suggestions = suggestions[:6]
-    return suggestions
+    return suggestions 
+
+
+
+
+
+def get_results(payload):
+    APPLICATION_ID='jeanguin-test-PRD-321e8fc30-d70f07ea'
+    try:
+        api = Finding(domain='svcs.ebay.com', appid=APPLICATION_ID, config_file=None)
+        payload['itemFilter'] = [
+            {'name': 'LocatedIn', 'value': 'FR'},
+            {'name': 'ListingType', 'value': 'Auction'}
+        ]
+        response = api.execute('findItemsAdvanced', payload)
+        return response.dict()
+    except ConnectionError as e:
+        print(e)
+        print(e.response.dict()) 
+
+
+
+
+def extract_info(response):
+    items = response.get('searchResult', {}).get('item', [])
+    extracted_info = []
+
+    for item in items:
+        item_info = {
+            'title': item.get('title', ''),
+            'galleryURL': item.get('galleryURL', ''),
+            'viewItemURL': item.get('viewItemURL', ''),
+            'location': item.get('location', ''),
+            'currentPrice': item.get('sellingStatus', {}).get('currentPrice', {}).get('value', ''),
+            'currency': item.get('sellingStatus', {}).get('currentPrice', {}).get('_currencyId', ''),
+            'bidCount': item.get('sellingStatus', {}).get('bidCount', ''),
+            'sellingState': item.get('sellingStatus', {}).get('sellingState', ''),
+            'startTime': item.get('listingInfo', {}).get('startTime', ''),
+            'endTime': item.get('listingInfo', {}).get('endTime', ''),
+            'watchCount': item.get('listingInfo', {}).get('watchCount', ''),
+            'condition': item.get('condition', {}).get('conditionDisplayName', '')
+        }
+        extracted_info.append(item_info)
+
+    return jsonify(extracted_info)
