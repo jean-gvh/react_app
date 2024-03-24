@@ -69,9 +69,13 @@ def search_ebay():
         'keywords': request.args.get('pokemon_name'),
         'paginationInput': {'entriesPerPage': 10}
     }
+
+    #Requête à l'API pour obtenir les donnéess ur les enchères en cours 
     results = get_results(payload)
+
+    #Filtrage des données retournées par la requête à l'API d'eBay
     extracted_info = extract_info(results)
-    print('Results from eBay:', extract_info)
+   
     return extracted_info
 
 
