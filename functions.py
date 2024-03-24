@@ -76,7 +76,7 @@ def get_pokemon_suggestions(term):
 def get_results(payload):
     APPLICATION_ID='jeanguin-test-PRD-321e8fc30-d70f07ea'
     try:
-        api = Finding(domain='svcs.ebay.fr', appid=APPLICATION_ID, config_file=None)
+        api = Finding(domain='svcs.ebay.fr', appid=APPLICATION_ID, config_file=None, siteid='EBAY-FR')
         payload['itemFilter'] = [
             {'name': 'LocatedIn', 'value': 'FR'},
             {'name': 'ListingType', 'value': 'Auction'}
