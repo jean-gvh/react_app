@@ -71,17 +71,17 @@ def get_pokemon_suggestions(term):
 
 
 
+#eBay Auctions API Call
 
-
-def get_results(payload):
+def get_auctions_results(parameters):
     APPLICATION_ID='jeanguin-test-PRD-321e8fc30-d70f07ea'
     try:
         api = Finding(domain='svcs.ebay.fr', appid=APPLICATION_ID, config_file=None, siteid='EBAY-FR')
-        payload['itemFilter'] = [
+        parameters['itemFilter'] = [
             {'name': 'LocatedIn', 'value': 'FR'},
             {'name': 'ListingType', 'value': 'Auction'}
         ]
-        response = api.execute('findItemsAdvanced', payload)
+        response = api.execute('findItemsAdvanced', parameters)
         return response.dict()
     except ConnectionError as e:
         print(e)
@@ -111,4 +111,42 @@ def extract_info(response):
         }
         extracted_info.append(item_info)
 
+    return jsonify(extracted_info) 
+
+
+#eBay Direct Offers API Call
+
+def get_direct_offers_results(parameters):
+    APPLICATION_ID='jeanguin-test-PRD-321e8fc30-d70f07ea'
+    try:
+        api = Finding(domain='svcs.ebay.fr', appid=APPLICATION_ID, config_file=None, siteid='EBAY-FR')
+        parameters['itemFilter'] = [
+            {'name': 'LocatedIn', 'value': 'FR'},
+            {'name': 'ListingType', 'value': 'FixedPrice'}
+        ]
+        response = api.execute('findItemsAdvanced', parameters)
+        return response.dict()
+    except ConnectionError as e:
+        print(e)
+        print(e.response.dict()) 
+
+
+def direct_offers_extract_info(response):
+    items = response.get('searchResult', {}).get('item', [])
+    extracted_info = []
+    for item in items:
+        item_info = {
+            'title': item.get('title', ''),
+            'startTime' : item.get('starttime',''),
+            'galleryURL': item.get('galleryURL', ''),
+            'viewItemURL': item.get('viewItemURL', ''),
+            'location': item.get('location', ''),
+            'currentPrice': item.get('sellingStatus', {}).get('currentPrice', {}).get('value', ''),
+            'currency': item.get('sellingStatus', {}).get('currentPrice', {}).get('_currencyId', ''),
+            'condition': item.get('condition', {}).get('conditionDisplayName', ''),
+            'watchCount': item.get('listingInfo', {}).get('watchCount', ''),
+            'shippingServiceCost': item.get('shippingInfo', {}).get('shippingServiceCost', {}).get('value', ''),
+            'shippingServiceCurrency': item.get('shippingInfo', {}).get('shippingServiceCost', {}).get('_currencyId', '')
+        }
+        extracted_info.append(item_info)
     return jsonify(extracted_info)

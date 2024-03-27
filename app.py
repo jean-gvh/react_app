@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, joinedload
 from models import PokemonSet, EbaySalesData
 from collections import defaultdict
-from functions import get_results, extract_info
+from functions import get_auctions_results, get_direct_offers_results, extract_info, direct_offers_extract_info
 
 # Configuration de l'application Flask
 app = Flask(__name__, '/static')
@@ -64,20 +64,34 @@ def get_sales_data():
 
 
 @app.route('/search', methods=['GET'])
-def search_ebay():
+def search_ebay_auctions():
     payload = {
         'keywords': request.args.get('pokemon_name'),
         'paginationInput': {'entriesPerPage': 10}
     }
 
     #Requête à l'API pour obtenir les donnéess ur les enchères en cours 
-    results = get_results(payload)
+    results = get_auctions_results(payload)
 
     #Filtrage des données retournées par la requête à l'API d'eBay
     extracted_info = extract_info(results)
    
     return extracted_info
 
+@app.route('/search_directs_offers', methods=['GET'])
+def search_ebay_direct_offers():
+    parameters = {
+        'keywords': request.args.get('pokemon_name'),
+        'paginationInput': {'entriesPerPage': 10}
+    }
+
+    #Requête à l'API pour obtenir les donnéess ur les enchères en cours 
+    results = get_direct_offers_results(parameters)
+
+    #Filtrage des données retournées par la requête à l'API d'eBay
+    direct_offers_extracted_data = direct_offers_extract_info(results)
+   
+    return direct_offers_extracted_data
 
 
 
