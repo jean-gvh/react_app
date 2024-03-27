@@ -137,7 +137,7 @@ def direct_offers_extract_info(response):
     for item in items:
         item_info = {
             'title': item.get('title', ''),
-            'startTime' : item.get('starttime',''),
+            'startTime': item.get('listingInfo', {}).get('startTime', ''),
             'galleryURL': item.get('galleryURL', ''),
             'viewItemURL': item.get('viewItemURL', ''),
             'location': item.get('location', ''),
