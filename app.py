@@ -4,9 +4,16 @@ from sqlalchemy.orm import sessionmaker, joinedload
 from models import PokemonSet, EbaySalesData
 from collections import defaultdict
 from functions import get_auctions_results, get_direct_offers_results, extract_info, direct_offers_extract_info
+from flask_pymongo import PyMongo
+import bcrypt
+from models import User
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+
 
 # Configuration de l'application Flask
-app = Flask(__name__, '/static')
+app = Flask(__name__,static_folder='frontend/build/static')
+app.config["MONGO_URI"] = "mongodb://localhost:27017/user_test"
+mongo = PyMongo(app)
 
 # Configuration de la base de données
 DB_USER = 'root'
@@ -19,7 +26,9 @@ DB_NAME = 'test2'
 engine = create_engine(f'mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
 Session = sessionmaker(bind=engine)
 
-app = Flask(__name__,static_folder='frontend/build/static')
+app.config['JWT_SECRET_KEY'] = 'votre_clé_secrète'
+jwt = JWTManager(app)
+
 
 @app.route('/api/getSalesData', methods=['GET'])
 def get_sales_data():
@@ -28,7 +37,7 @@ def get_sales_data():
 
     # Effectuez les opérations nécessaires pour obtenir les données de ventes
     session = Session()
-    pokemon_sales = session.query(EbaySalesData).options(joinedload('pokemon_set')).filter(EbaySalesData.card_name == pokemon_name).all()
+    pokemon_sales = session.query(EbaySalesData).options(joinedload(EbaySalesData.pokemon_set)).filter(EbaySalesData.card_name == pokemon_name).all()
 
     # Prétraitement des dates et calculs
     grouped_data = defaultdict(lambda: {'prices': [], 'date': None})
@@ -93,6 +102,49 @@ def search_ebay_direct_offers():
    
     return direct_offers_extracted_data
 
+
+# Route pour l'inscription
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    email = data.get('email')
+    age = data.get('age')
+    rgpd_consent = data.get('rgpd_consent')
+    reason = data.get('reason')
+
+    # Vérifier si l'utilisateur existe déjà
+    user = mongo.db.users.find_one({'$or': [{'username': username}, {'email': email}]})
+    if user:
+        return jsonify({'error': 'Nom d\'utilisateur ou email déjà utilisé'}), 400
+
+    # Créer un nouvel utilisateur
+    new_user = User(username, password, email, age, rgpd_consent, reason)
+    new_user.start_session(new_user)
+
+    return jsonify({'message': 'Utilisateur créé avec succès'}), 201
+
+# Route pour la connexion
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    # Vérifier si l'utilisateur existe
+    user = mongo.db.users.find_one({'username': username})
+    if not user:
+        return jsonify({'error': 'Nom d\'utilisateur ou mot de passe incorrect'}), 400
+
+    # Vérifier le mot de passe
+    if not bcrypt.checkpw(password.encode('utf-8'), user['password']):
+        return jsonify({'error': 'Nom d\'utilisateur ou mot de passe incorrect'}), 400
+
+    # Générer un token JWT
+    access_token = create_access_token(identity=str(user['_id']))
+
+    return jsonify({'token': access_token}), 200
 
 
 if __name__ == '__main__':
