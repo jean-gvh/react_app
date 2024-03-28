@@ -7,8 +7,8 @@ from functions import get_auctions_results, get_direct_offers_results, extract_i
 from flask_pymongo import PyMongo
 import bcrypt
 from models import User
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
-
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from datetime import datetime
 
 # Configuration de l'application Flask
 app = Flask(__name__,static_folder='frontend/build/static')
@@ -144,7 +144,45 @@ def login():
     # Générer un token JWT
     access_token = create_access_token(identity=str(user['_id']))
 
-    return jsonify({'token': access_token}), 200
+    start_time = datetime.utcnow()
+
+    # Ajouter la nouvelle session à l'utilisateur
+    new_session = {
+        'session_id': access_token,
+        'start_time': start_time,
+        'actions': []
+    }
+    mongo.db.users.update_one({'_id': user['_id']}, {'$push': {'sessions': new_session}})
+
+    return jsonify({'token': access_token, 'user_id': str(user['_id'])}), 200
+
+
+
+@app.route('/api/insertPokemonSearch', methods=['POST'])
+@jwt_required()  # Assurez-vous que l'utilisateur est authentifié
+def insert_pokemon_search():
+    data = request.json
+    # Récupérez l'identifiant de l'utilisateur à partir du token JWT
+    user_id = get_jwt_identity()
+
+    # Récupérez les données de la carte Pokémon à partir de la requête JSON
+    pokemon_name = data.get('pokemon_name')
+    image_url = data.get('image_url')
+    set_name = data.get('set_name')
+    bloc_name = data.get('bloc_name')
+
+    # Insérez les données de la carte Pokémon dans la collection correspondante de MongoDB, en associant l'utilisateur et la session en cours
+    mongo.db.user_searches.insert_one({
+        'user_id': user_id,
+        'pokemon_name': pokemon_name,
+        'image_url': image_url,
+        'set_name': str(set_name),
+        'bloc_name': bloc_name
+    })
+
+    return jsonify({'message': 'Données de la carte Pokémon insérées avec succès'}), 200
+
+
 
 
 if __name__ == '__main__':
